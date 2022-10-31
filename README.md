@@ -26,7 +26,7 @@
 <br />
 <div align="center">
   <a href="https://stateless-public-chat.vercel.app/" >
-    <img src="https://raw.githubusercontent.com/najimRizky/stateless-public-chat/master/screenshot.png?token=GHSAT0AAAAAABMDBULACGZ6LLHCH62BA6BKY27SB7A" alt="Screenshot" style="border-radius: 20px " width="600">
+    <img src="https://raw.githubusercontent.com/najimRizky/stateless-public-chat/master/screenshot.png" alt="Screenshot" style="border-radius: 20px " width="600">
   </a>
 
   <h3 align="center">Stateless Public Chat</h3>
