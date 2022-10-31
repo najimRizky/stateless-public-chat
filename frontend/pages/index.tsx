@@ -25,7 +25,7 @@ const modalStyle: SxProps = {
 
 // Initialize websocket client
 // const url = "http://localhost:4000"
-const url = "https://firstwebsocketnajim.herokuapp.com"
+const url = "https://stateless-public-chat.herokuapp.com"
 const socket: Socket = io(url, { autoConnect: false })
 
 // Message data structure
