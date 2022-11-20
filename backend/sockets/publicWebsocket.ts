@@ -3,6 +3,7 @@ import { activeUsers, usersIsTyping } from "../data/user"
 import showActiveUsers from "../utils/showActiveUser"
 
 const publicWebsocket = (socket: Socket) => {
+    console.log("Welcome to Public Websocket")
     // Event for connected
     socket.on("connected", (username) => {
         console.log(`------- ${username} has connected (${socket.id}) -------`)
@@ -15,15 +16,20 @@ const publicWebsocket = (socket: Socket) => {
     // Event for disconnect
     socket.on("disconnect", () => {
         const username: any = Object.keys(activeUsers).find(key => activeUsers[key] === socket.id)
+
         delete activeUsers[username]
+        usersIsTyping.splice(usersIsTyping.findIndex(user => user === username), 1)
+
+        socket.broadcast.emit("othersIsTyping", usersIsTyping)        
         socket.broadcast.emit("activeUsers", Object.keys(activeUsers).map(username => username))
+        
         console.log(`------- ${username} has disconnected -------`)
+        
         showActiveUsers()
     })
 
     // Event for sendMessage
     socket.on("sendMessage", (data) => {
-        // socket.to(activeUsers[data.to]).emit("receiveMessage", data)
         socket.broadcast.emit("receiveMessage", data)
     })
 
