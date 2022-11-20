@@ -24,8 +24,8 @@ const Room: NextPage<IRoomProps> = (props) => {
             <Box sx={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 2 }}>
                 <form onSubmit={goToRoom}>
                     <Typography component={"h2"} fontSize={32}>Please Enter the Room Name</Typography>
-                    <TextField required value={roomName} onChange={(e) => setRoomName(e.target.value)} name="roomName" sx={{ width: "100%", maxWidth: 512 }} variant="standard" type="text" label="Room ID" placeholder="Example: Johny and friends" />
-                    <Button type={"submit"} sx={{ width: "100%", maxWidth: 512 }} variant="contained" >Join Room</Button>
+                    <TextField required value={roomName} onChange={(e) => setRoomName(e.target.value)} name="roomName" sx={{ width: "100%", maxWidth: 512 }} variant="standard" type="text" label="Room Name" placeholder="Example: Johny and friends" />
+                    <Button type={"submit"} sx={{ width: "100%", maxWidth: 512, mt: 2 }} variant="contained" >Join Room</Button>
                 </form>
             </Box>
         </Container>

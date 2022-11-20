@@ -9,10 +9,11 @@ import { Message } from '../utils/globalType'
 
 interface ChatAppProps {
     url: string,
-    socket: Socket
+    socket: Socket,
+    roomName?: string | undefined
 }
 
-const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket }) => {
+const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket, roomName }) => {
     // This user username
     const [username, setUsername] = useState<string>("")
     // All users messages
@@ -36,14 +37,15 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket }) => {
     // Connect User to server
     const connectUser = (usernameTmp: string) => {
         socket.connect()
-        socket.emit("connected", usernameTmp)
+        const data = roomName ? { roomName: roomName, username: usernameTmp } : usernameTmp
+        socket.emit("connected", data)
         setUsername(usernameTmp)
         getActiveUsers(usernameTmp)
     }
 
     // Get Active Users on inital
     const getActiveUsers = async (usernameTmp: string) => {
-        const response = await fetch(url + "/activeUsers")
+        const response = await fetch(url + (roomName ? `/${roomName}` : "") + "/activeUsers")
         const data = await response.json()
         setActiveUsers([usernameTmp, ...data.activeUsers])
     }
@@ -80,7 +82,7 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket }) => {
             scrollDownMessages()
             socket.off('othersIsTyping');
         }
-    }, [othersIsTyping])
+    }, [username])
 
     // Basic function for scroll down
     const scrollDownMessages = () => {
@@ -99,13 +101,15 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket }) => {
                 from: username,
                 mssg: message,
             }
+
+            if (roomName) data.roomName = roomName
+
             socket.emit("sendMessage", data)
             updateMessages(data)
             setMessage("")
             setUserIsTyping(false)
         }
     }
-
 
     const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setMessage(e.target.value)
@@ -121,11 +125,10 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket }) => {
         return () => clearTimeout(delay)
     }, [message])
 
+
     useEffect(() => {
-        if (userIsTyping) {
-            socket.emit("userIsTyping", { user: username, isTyping: true })
-        } else {
-            socket.emit("userIsTyping", { user: username, isTyping: false })
+        if (username) {
+            socket.emit("userIsTyping", { user: username, isTyping: userIsTyping, ...(roomName && { roomName: roomName }) })
         }
     }, [userIsTyping])
 
@@ -133,7 +136,9 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket }) => {
         <>
             <Container sx={{ mt: 6 }} >
                 <Box>
-                    <Typography component={"h1"} textAlign="center" fontSize={36} >Welcome to Stateless Public Messages! 🖐</Typography>
+                    <Typography component={"h1"} textAlign="center" fontSize={36} >
+                        {roomName ? <>Welcome to Room Chat: <b>{roomName}</b></> : "Welcome to Stateless Public Messages! 🖐" }
+                    </Typography>
                     <Typography sx={{ textDecoration: "underline", textAlign: "center", fontSize: 16 }} >Username: {username}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -198,34 +203,25 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket }) => {
                 </Box>
             </Container>
 
-            <ModalGetUsername connectUser={connectUser} url={url} />
+            <ModalGetUsername connectUser={connectUser} url={url} roomName={roomName} />
         </>
     )
 }
 
 interface ModalGetUsernameProps {
     connectUser: (usernameTmp: string) => void,
-    url: string
+    url: string,
+    roomName: string | undefined
 }
 
-const ModalGetUsername: React.FunctionComponent<ModalGetUsernameProps> = ({ connectUser, url }) => {
+const ModalGetUsername: React.FunctionComponent<ModalGetUsernameProps> = ({ connectUser, url, roomName }) => {
     // State for request username
     const [requestUsername, setRequestUsername] = useState<string>("")
-    const [rememberUsername, setRememberUsername] = useState<boolean>(false)
     const [error, setError] = useState<string>("")
     const [isSubmittingUsername, setIsSubmittingUsername] = useState<boolean>(false)
 
     // State for modal box close/open
     const [openModal, setOpenModal] = useState<boolean>(true);
-
-    // Hook for initialization (ask/check username at the beginning)
-    useEffect(() => {
-        let usernameTmp: string | null | undefined = window.localStorage.getItem("username")
-        if (usernameTmp) {
-            connectUser(usernameTmp)
-            setOpenModal(false)
-        }
-    }, [])
 
     // Handle user change Request Username
     const handleChangeRequestUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,7 +234,7 @@ const ModalGetUsername: React.FunctionComponent<ModalGetUsernameProps> = ({ conn
         e.preventDefault()
         if (requestUsername !== "") {
             setIsSubmittingUsername(true)
-            const response = await fetch(url + "/username", {
+            const response = await fetch(url + (roomName ? `/${roomName}` : "") + "/username", {
                 method: "POST",
                 body: JSON.stringify({ username: requestUsername }),
                 headers: {
@@ -251,7 +247,7 @@ const ModalGetUsername: React.FunctionComponent<ModalGetUsernameProps> = ({ conn
                 const data = await response.json()
                 setError(data.mssg)
             } else {
-                if (rememberUsername) window.localStorage.setItem("username", requestUsername)
+                // if (rememberUsername) window.localStorage.setItem("username", requestUsername)
                 connectUser(requestUsername)
                 setOpenModal(false)
             }
@@ -274,8 +270,7 @@ const ModalGetUsername: React.FunctionComponent<ModalGetUsernameProps> = ({ conn
                 </Typography>
                 <form onSubmit={(e) => { submitUsername(e); }} >
                     <TextField onChange={handleChangeRequestUsername} value={requestUsername} fullWidth id="outlined-basic" label="Username" variant="standard" error={error !== ""} helperText={error} />
-                    <FormControlLabel control={<Checkbox onChange={() => { setRememberUsername(!rememberUsername) }} checked={rememberUsername} />} label="Remamber Username?" />
-                    <Button variant='contained' type='submit' fullWidth disabled={isSubmittingUsername} >{isSubmittingUsername ? <CircularProgress size={"24px"} sx={{ color: "#000" }} /> : "Submit Username"}</Button>
+                    <Button sx={{mt: 2}} variant='contained' type='submit' fullWidth disabled={isSubmittingUsername} >{isSubmittingUsername ? <CircularProgress size={"24px"} sx={{ color: "#000" }} /> : "Submit Username"}</Button>
                 </form>
             </Box>
         </Modal >
