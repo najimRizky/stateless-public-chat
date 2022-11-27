@@ -3,8 +3,9 @@ import cors from "cors"
 import http from "http"
 import { Server } from "socket.io"
 import publicWebsocket from "./sockets/publicWebsocket"
-import { activeUsers, roomActiveUsers } from "./data/user"
 import roomWebsockets from "./sockets/roomWebsockets"
+import publicRoutes from "./routes/publicRoutes"
+import roomRoutes from "./routes/roomRoutes"
 
 const app: Express = express();
 app.use(cors())
@@ -14,45 +15,12 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } })
 const port = process.env.PORT || 4000
 
-
-
 // =========== REST API LISTENER =========== //
 app.get('/', (req: Request, res: Response) => {
     res.send('<h1>Websocket by Najim</h1>');
 });
-
-app.post("/username", (req: Request, res: Response) => {
-    console.log("POST /username")
-    const { username } = req.body
-    if (activeUsers[username]) {
-        res.status(403).json({ mssg: "Username already in used" })
-    } else {
-        res.status(201).json({ mssg: "Ok" })
-    }
-})
-app.get("/activeUsers", (req: Request, res: Response) => {
-    console.log("GET /activeUsers")
-    res.status(200).json({ activeUsers: [...Object.keys(activeUsers).map(username => username)] })
-})
-
-app.post("/room/:roomName/username", (req: Request, res: Response) => {
-    console.log(`POST /room/${req.params.roomName}/username`)
-    const { username } = req.body
-    if (roomActiveUsers[req.params.roomName] && roomActiveUsers[req.params.roomName][username]) {
-        res.status(403).json({ mssg: "Username already in used" })
-    } else {
-        res.status(201).json({ mssg: "Ok" })
-    }
-})
-
-app.get("/room/:roomName/activeUsers", (req: Request, res: Response) => {
-    console.log(`GET /room/${req.params.roomName}/activeUsers`)
-    if (roomActiveUsers[req.params.roomName]) {
-        res.status(200).json({ activeUsers: [...Object.keys(roomActiveUsers[req.params.roomName]).map(username => username)] })
-    } else {
-        res.status(200).json({ activeUsers: [] })
-    }
-})
+app.use("/", publicRoutes)
+app.use("/room", roomRoutes)
 // =========== END OF API LISTENER =========== //
 
 // =========== WEBSOCKETS LISTENER =========== //
