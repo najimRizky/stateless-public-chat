@@ -36,4 +36,3 @@ node_modules
 /frontend/next-env.d.ts
 
 /backend/dist
-/backend/api
