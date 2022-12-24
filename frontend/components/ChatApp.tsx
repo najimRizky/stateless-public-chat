@@ -1,5 +1,5 @@
 import { Container, Typography, Box, TextField, Button, Stack, Paper, Modal, FormControlLabel, Checkbox, Grid, CircularProgress } from '@mui/material'
-import { io, Socket } from 'socket.io-client'
+import { Socket } from 'socket.io-client'
 import { useEffect, useState } from 'react'
 import moment from 'moment'
 import { Circle, Send } from '@mui/icons-material'
@@ -134,50 +134,24 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket, roomName 
 
     return (
         <>
-            <Container sx={{ mt: 6 }} >
+            <Container sx={{ pt: 6 }} >
                 <Box>
                     <Typography component={"h1"} textAlign="center" fontSize={36} >
-                        {roomName ? <>Welcome to Room Chat: <b>{roomName}</b></> : "Welcome to Stateless Public Messages! 🖐" }
+                        {roomName ? <>Welcome to Room Chat: <b>{roomName}</b></> : "Welcome to Stateless Public Messages! 🖐"}
                     </Typography>
                     <Typography sx={{ textDecoration: "underline", textAlign: "center", fontSize: 16 }} >Username: {username}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
                     <Grid container sx={{ maxWidth: 700, width: "90vw" }} spacing={2}>
                         <Grid item sm={4} xs={12}>
-                            <Paper sx={{ overflowY: "hidden", bgcolor: "rgba(0,0,0,0.1)", height: { sm: "400px", xs: "150px" } }}>
-                                <Box sx={{ bgcolor: "primary.light" }}>
-                                    <Typography sx={{ color: "#fff", py: "6px", display: "flex", alignItems: "center", justifyContent: "center" }} >Active Users &nbsp; <Circle sx={{ color: "#4aff53" }} fontSize='inherit' /> </Typography>
-                                </Box>
-                                <Box sx={{ overflowY: "auto", height: "100%" }}>
-                                    {activeUsers.length !== 0 && activeUsers.map((user, id) =>
-                                        <Box key={id} sx={{ p: 1, borderBottom: "1px solid rgba(0,0,0,0.2)", ":hover": { bgcolor: "rgba(0,0,0,0.1)", cursor: "pointer" } }}>
-                                            <Typography>{user === username ? `${user} (You)` : user}</Typography>
-                                        </Box>
-                                    )}
-                                </Box>
-                            </Paper>
+                            <ActiveUsersBox activeUsers={activeUsers} username={username} />
                         </Grid>
                         <Grid item sm={8} xs={12}>
                             <form action="" onSubmit={sendMessage} style={{ height: "400px", display: 'flex', flexDirection: "column" }}>
-                                <Paper sx={{ p: 2, height: "100%", overflowY: "auto", bgcolor: "rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", gap: "20px", }} className='messagesBox'>
+                                <Paper sx={{ p: 2, height: "100%", overflowY: "auto", bgcolor: "#fff", display: "flex", flexDirection: "column", gap: "20px", }} className='messagesBox'>
                                     <AnimatePresence>
                                         {messages && messages.map((message, id) =>
-                                            <Box component={motion.div} initial={{ scale: 0 }} animate={{ scale: 1 }} className='messageItem' key={id}
-                                                sx={{
-                                                    bgcolor: message.from === username ? "#c3e1ff" : "#fff",
-                                                    alignSelf: message.from === username ? "end" : "start",
-                                                    p: 1,
-                                                    borderRadius: "10px",
-                                                    width: "80%",
-                                                }}>
-                                                <Typography component={"h3"} sx={{ m: 0 }} fontSize={14}>
-                                                    <strong style={{}}>{message.from === username ? "You" : message.from}</strong>
-                                                    <span style={{ fontSize: "10px" }}> - {moment(message.time).format("ddd, DD MMM h:mm A")}</span>
-                                                </Typography>
-                                                <Typography component={"p"} fontSize={14}>
-                                                    {message.mssg}
-                                                </Typography>
-                                            </Box>
+                                            <MessageBox message={message} username={username} key={id} />
                                         )}
                                     </AnimatePresence>
                                     {othersIsTyping.length !== 0 &&
@@ -194,6 +168,7 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket, roomName 
                                         placeholder="Send any message here.."
                                         fullWidth
                                         size='small'
+                                        sx={{ bgcolor: "#fff" }}
                                     />
                                     <Button sx={{ px: 3 }} type="submit" variant='contained' endIcon={<Send />} >Send</Button>
                                 </Stack >
@@ -208,6 +183,8 @@ const ChatApp: React.FunctionComponent<ChatAppProps> = ({ url, socket, roomName 
     )
 }
 
+
+// ================== Get User Name Modal Box ================== //
 interface ModalGetUsernameProps {
     connectUser: (usernameTmp: string) => void,
     url: string,
@@ -270,11 +247,89 @@ const ModalGetUsername: React.FunctionComponent<ModalGetUsernameProps> = ({ conn
                 </Typography>
                 <form onSubmit={(e) => { submitUsername(e); }} >
                     <TextField onChange={handleChangeRequestUsername} value={requestUsername} fullWidth id="outlined-basic" label="Username" variant="standard" error={error !== ""} helperText={error} />
-                    <Button sx={{mt: 2}} variant='contained' type='submit' fullWidth disabled={isSubmittingUsername} >{isSubmittingUsername ? <CircularProgress size={"24px"} sx={{ color: "#000" }} /> : "Submit Username"}</Button>
+                    <Button sx={{ mt: 2 }} variant='contained' type='submit' fullWidth disabled={isSubmittingUsername} >{isSubmittingUsername ? <CircularProgress size={"24px"} sx={{ color: "#000" }} /> : "Submit Username"}</Button>
                 </form>
             </Box>
         </Modal >
     )
 }
+
+// ================== End of Get User Name Modal Box ================== //
+
+// ================== Message Box ================== //
+interface MessageBoxProps {
+    message: Message,
+    username: string
+}
+
+const MessageBox: React.FunctionComponent<MessageBoxProps> = ({ message, username }) => {
+    const color = {
+        you: "#c3e1ff",
+        others: "#e5e5e5"
+    }
+
+    return (
+        <Box component={motion.div} initial={{ scale: 0 }} animate={{ scale: 1 }} className='messageItem'
+            sx={{
+                bgcolor: message.from === username ? color.you : color.others,
+                alignSelf: message.from === username ? "end" : "start",
+                p: 1,
+                borderRadius: message.from === username ? "10px 10px 0" : "0 10px 10px",
+                width: "80%",
+                position: "relative",
+                ":before": {
+                    content: "''",
+                    fontSize: 0,
+                    position: "absolute",
+                    width: 0,
+                    height: 0,
+                    border: `5px solid ${message.from === username ? color.you : color.others}`,
+                    ...message.from === username ? {
+                        borderBottomColor: "transparent",
+                        borderLeftColor: "transparent",
+                        top: "100%",
+                        right: 0,
+                    } : {
+                        borderTopColor: "transparent",
+                        borderRightColor: "transparent",
+                        bottom: "100%",
+                        left: 0,
+                    }
+
+                }
+            }}>
+            <Typography component={"h3"} sx={{ m: 0 }} fontSize={14}>
+                <strong style={{}}>{message.from === username ? "You" : message.from}</strong>
+                <span style={{ fontSize: "10px" }}> - {moment(message.time).format("ddd, DD MMM h:mm A")}</span>
+            </Typography>
+            <Typography component={"p"} fontSize={14}>
+                {message.mssg}
+            </Typography>
+        </Box>
+    )
+}
+// ================== Active Users Box ================== //
+interface ActiveUsersProps {
+    activeUsers: string[],
+    username: string
+}
+
+const ActiveUsersBox: React.FunctionComponent<ActiveUsersProps> = ({ activeUsers, username}) => {
+    return (
+        <Paper sx={{ overflowY: "hidden", bgcolor: "#fff", height: { sm: "400px", xs: "150px" } }}>
+            <Box sx={{ bgcolor: "primary.light" }}>
+                <Typography sx={{ color: "#fff", py: "6px", display: "flex", alignItems: "center", justifyContent: "center" }} >Active Users ({activeUsers.length}) &nbsp; <Circle sx={{ color: "#4aff53" }} fontSize='inherit' /> </Typography>
+            </Box>
+            <Box sx={{ overflowY: "auto", height: "100%" }}>
+                {activeUsers.length !== 0 && activeUsers.map((user, id) =>
+                    <Box key={id} sx={{ p: 1, borderBottom: "1px solid rgba(0,0,0,0.2)", ":hover": { bgcolor: "rgba(0,0,0,0.1)", cursor: "pointer" } }}>
+                        <Typography>{user === username ? `${user} (You)` : user}</Typography>
+                    </Box>
+                )}
+            </Box>
+        </Paper>
+    )
+}
+// ================== End of Active Users Box ================== //
 
 export default ChatApp;
