@@ -4,12 +4,9 @@
   "description": "my first web socket",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf dist && tsc",
-    "start": "node src/index.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/api/index.js\"",
-    "ts.check": "tsc --project tsconfig.json",
-    "add-build": "git add dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx tsc",
+    "start": "node dist/server.js",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/server.js\""
   },
   "pre-commit": [
     "ts.check",
