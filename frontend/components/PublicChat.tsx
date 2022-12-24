@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client'
 import ChatApp from './ChatApp'
 
 // Initialize websocket client
-const url =  process.env.NEXT_PUBLIC_API_BASE_URL || "https://stateless-public-chat.herokuapp.com"
+const url =  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
 const socket: Socket = io(url, { autoConnect: false })
 
 interface PublicChatProps{
